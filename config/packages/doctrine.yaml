@@ -1,0 +1,70 @@
+doctrine:
+    dbal:
+        url: 'postgresql://%env(DB_USERNAME)%:%env(DB_PASSWORD)%@%env(DB_HOST)%:%env(DB_PORT)%/%env(DB_NAME)%?serverVersion=11&charset=utf8'
+
+        # IMPORTANT: You MUST configure your server version,
+        # either here or in the DATABASE_URL env var (see .env file)
+        #server_version: '14'
+        logging: true
+        profiling_collect_backtrace: '%kernel.debug%'
+        use_savepoints: true
+        types:
+            bit_boolean: App\Doctrine\BitBooleanType
+            uuid: Symfony\Bridge\Doctrine\Types\UuidType
+            datetimetz_immutable: App\Doctrine\PostgresDateTimeTzImmutableType
+            link_preview_dto: App\Doctrine\LinkPreviewDtoType
+        mapping_types:
+            bit: bit_boolean
+            _text: string
+            _numeric: string
+            uuid: uuid
+    orm:
+        auto_generate_proxy_classes: true
+        enable_lazy_ghost_objects: true
+        report_fields_where_declared: true
+        validate_xml_mapping: true
+        naming_strategy: doctrine.orm.naming_strategy.underscore_number_aware
+        identity_generation_preferences:
+            Doctrine\DBAL\Platforms\PostgreSQLPlatform: identity
+        auto_mapping: true
+        mappings:
+            App:
+                type: attribute
+                is_bundle: false
+                dir: '%kernel.project_dir%/src/Entity'
+                prefix: 'App\Entity'
+                alias: App
+            ApiResource:
+                is_bundle: false
+                type: attribute
+                dir: '%kernel.project_dir%/src/ApiResource'
+                prefix: 'App\ApiResource'
+                alias: ApiResource
+        controller_resolver:
+            auto_mapping: false
+
+when@test:
+    doctrine:
+        dbal:
+            # Suffix disabled - database name already includes 'test' in .env.test
+            # dbname_suffix: '_test%env(default::TEST_TOKEN)%'
+
+when@prod:
+    doctrine:
+        orm:
+            auto_generate_proxy_classes: false
+            proxy_dir: '%kernel.build_dir%/doctrine/orm/Proxies'
+            query_cache_driver:
+                type: pool
+                pool: doctrine.system_cache_pool
+            result_cache_driver:
+                type: pool
+                pool: doctrine.result_cache_pool
+
+    framework:
+        cache:
+            pools:
+                doctrine.result_cache_pool:
+                    adapter: cache.app
+                doctrine.system_cache_pool:
+                    adapter: cache.system

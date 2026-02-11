@@ -1,0 +1,27 @@
+{
+  "name": "switchboard-api",
+  "version": "1.0.0",
+  "description": "### Dump DB: ``` pg_dump -U aptvision -W --host=postgres --dbname=switchboard --schema-only > ./sql/initial_main_rss_db.sql ```",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vespy-pg/switchboard-api.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vespy-pg/switchboard-api/issues"
+  },
+  "homepage": "https://github.com/vespy-pg/switchboard-api#readme",
+  "devDependencies": {
+    "playwright": "^1.57.0"
+  }
+}

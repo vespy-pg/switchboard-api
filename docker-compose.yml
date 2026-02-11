@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  proxy:
+    image: jwilder/nginx-proxy:latest
+    container_name: nginx_proxy_switchboard
+    ports:
+      - "91:80"
+    volumes:
+      - "/var/run/docker.sock:/tmp/docker.sock:ro"
+    environment:
+      DEFAULT_HOST: api.switchboard
+#    networks:
+#      - app_network
+
+  app:
+    image: php:8.3-fpm
+    container_name: switchboard_api
+    working_dir: /var/www/symfony
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/symfony
+    environment:
+      VIRTUAL_HOST: api.switchboard
+      VIRTUAL_PORT: 9100
+      DATABASE_URL: "postgresql://postgres:postgres@postgres:5432/switchboard"
+    networks:
+      - local-setup-scripts_default
+    depends_on:
+      - proxy
+
+  nginx:
+    image: nginx:latest
+    container_name: switchboard_nginx
+    volumes:
+      - ./.nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - .:/var/www/symfony
+    environment:
+      VIRTUAL_HOST: api.switchboard
+      VIRTUAL_PORT: 80
+    ports:
+      - "8084:80"
+    networks:
+      - local-setup-scripts_default
+    depends_on:
+      - app
+
+networks:
+  local-setup-scripts_default:
+    external: true

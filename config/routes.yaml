@@ -1,0 +1,12 @@
+controllers:
+    resource:
+        path: ../src/Controller/
+        namespace: App\Controller
+    type: attribute
+#countries_get:
+#    path: /countries/{code}
+#    controller: api_platform.action.get_item
+#    defaults:
+#        _api_resource_class: App\Entity\Country
+#        _api_operation_name: get
+#    methods: [ GET ]
