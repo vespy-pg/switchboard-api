@@ -11,12 +11,7 @@ class UserVoter extends Voter
     public const CREATE = 'USER_CREATE';
     public const SHOW   = 'USER_SHOW';
     public const UPDATE = 'USER_UPDATE';
-    public const BASIC_USER = 'ROLE_BASIC_USER';
-
-    protected function supports(string $attribute, $subject): bool
-    {
-        return in_array($attribute, [self::LIST, self::CREATE, self::SHOW, self::UPDATE], true);
-    }
+    protected array $supportedAttributes = [self::SHOW, self::LIST, self::CREATE, self::UPDATE];
 
     protected function canList(User $subject): void
     {

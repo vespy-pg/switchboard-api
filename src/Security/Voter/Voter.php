@@ -90,4 +90,9 @@ abstract class Voter extends BaseVoter
         // Convert UPPER_SNAKE_CASE or snake_case to camelCase
         return lcfirst(str_replace('_', '', ucwords(strtolower($input), '_')));
     }
+
+    final protected function supports(string $attribute, mixed $subject): bool
+    {
+        return in_array($attribute, $this->supportedAttributes);
+    }
 }

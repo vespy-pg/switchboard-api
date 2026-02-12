@@ -3,8 +3,6 @@
 namespace App\Service;
 
 use App\DTO\Auth\RegisterRequest;
-use App\Entity\CountryCurrency;
-use App\Entity\CountryLanguageHint;
 use App\Entity\Group;
 use App\Entity\User;
 use App\Entity\UserGroup;
@@ -31,7 +29,6 @@ class AuthService
         private readonly UserRepository $userRepository,
         private readonly UserSessionRepository $sessionRepository,
         private readonly UserPasswordHasherInterface $passwordHasher,
-        private readonly LanguageService $languageService,
         private readonly EventDispatcherInterface $eventDispatcher
     ) {
     }
@@ -49,27 +46,11 @@ class AuthService
         if ($existingUser) {
             throw new InvalidArgumentException('User with this email already exists.');
         }
-        $language = $this->languageService->getLanguageByAnyCode($request->getPreferredLanguage());
-        if ($language) {
-            $countryHints = $this->entityManager->getRepository(CountryLanguageHint::class)->findBy(['language' => $language]);
-            if (count($countryHints) === 1) {
-                $country = $countryHints[0]->getCountry();
-            }
-        }
-        if ($country ?? false) {
-            $currencies = $this->entityManager->getRepository(CountryCurrency::class)->findBy(['country' => $country]);
-            if (count($currencies) === 1) {
-                $currency = $currencies[0]->getCurrency();
-            }
-        }
 
         // Create user
         $user = new User();
         $user->setEmail($normalizedEmail);
         $user->setFirstName($data->firstName);
-        $user->setLanguage($language);
-        $user->setCountry($country ?? null);
-        $user->setCurrency($currency ?? null);
         $user->setIsVerified(false);
         $user->setEmailVerifiedAt(new DateTimeImmutable());
         $user->setCreatedAt(new DateTimeImmutable());

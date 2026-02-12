@@ -50,9 +50,6 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
     'createdAt' => 'exact',
     'lastUpdatedAt' => 'exact',
     'removedAt' => 'exact',
-    'countryCode' => 'exact',
-    'languageCode' => 'exact',
-    'currencyCode' => 'exact',
 ])]
 #[ApiFilter(OrderFilter::class, properties: [
     'id',
@@ -67,9 +64,6 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
     'createdAt',
     'lastUpdatedAt',
     'removedAt',
-    'countryCode',
-    'languageCode',
-    'currencyCode',
 ])]
 #[ApiFilter(MultiFieldSearchFilter::class, properties: [
     'id' => 'exact',
@@ -84,9 +78,6 @@ use Symfony\Component\Serializer\Attribute\SerializedName;
     'createdAt' => 'exact',
     'lastUpdatedAt' => 'exact',
     'removedAt' => 'exact',
-    'countryCode' => 'exact',
-    'languageCode' => 'exact',
-    'currencyCode' => 'exact',
 ])]
 #[ApiFilter(GroupFilter::class, arguments: ['overrideDefaultGroups' => true])]
 class User implements UserInterface, PasswordAuthenticatedUserInterface
@@ -148,21 +139,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(name: 'removed_at', type: 'datetimetz_immutable', nullable: true)]
     private ?DateTimeImmutable $removedAt = null;
-
-    #[ORM\ManyToOne(targetEntity: Country::class)]
-    #[ORM\JoinColumn(name: 'country_code', referencedColumnName: 'country_code', nullable: true)]
-    #[Groups(['user_country'])]
-    private ?Country $country = null;
-
-    #[ORM\ManyToOne(targetEntity: Language::class)]
-    #[ORM\JoinColumn(name: 'language_code', referencedColumnName: 'language_code', nullable: true)]
-    #[Groups(['user_language'])]
-    private ?Language $language = null;
-
-    #[ORM\ManyToOne(targetEntity: Currency::class)]
-    #[ORM\JoinColumn(name: 'currency_code', referencedColumnName: 'currency_code', nullable: true)]
-    #[Groups(['user_currency'])]
-    private ?Currency $currency = null;
 
     #[ORM\OneToMany(targetEntity: UserGroup::class, mappedBy: 'group', fetch: 'EXTRA_LAZY')]
     #[Groups(['user_user_groups'])]
@@ -311,54 +287,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setRemovedAt(?DateTimeImmutable $removedAt): void
     {
         $this->removedAt = $removedAt;
-    }
-
-    public function getCountry(): ?Country
-    {
-        return $this->country;
-    }
-
-    public function setCountry(?Country $country): void
-    {
-        $this->country = $country;
-    }
-
-    #[Groups(['read'])]
-    public function getCountryCode(): ?string
-    {
-        return $this->getCountry()?->getCode();
-    }
-
-    public function getLanguage(): ?Language
-    {
-        return $this->language;
-    }
-
-    public function setLanguage(?Language $language): void
-    {
-        $this->language = $language;
-    }
-
-    #[Groups(['read'])]
-    public function getLanguageCode(): ?string
-    {
-        return $this->getLanguage()?->getCode();
-    }
-
-    public function getCurrency(): ?Currency
-    {
-        return $this->currency;
-    }
-
-    public function setCurrency(?Currency $currency): void
-    {
-        $this->currency = $currency;
-    }
-
-    #[Groups(['read'])]
-    public function getCurrencyCode(): ?string
-    {
-        return $this->getCurrency()?->getCode();
     }
 
     // UserInterface implementation
