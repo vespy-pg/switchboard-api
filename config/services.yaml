@@ -42,6 +42,9 @@ services:
             $resourceMetadataFactory: '@api_platform.metadata.resource.metadata_collection_factory'
         tags: [ 'api_platform.filter' ]
 
+    App\ApiPlatform\Filter\DeviceOwnershipFilter:
+        tags: [ 'api_platform.filter' ]
+
     App\DataProvider\UserDataProvider:
         arguments:
             $managerRegistry: '@doctrine'

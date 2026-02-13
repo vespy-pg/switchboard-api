@@ -3,6 +3,7 @@
 namespace App\Security\Voter;
 
 use App\Entity\Device;
+use App\Exception\AccessDeniedException;
 
 class DeviceVoter extends Voter
 {
@@ -26,5 +27,14 @@ class DeviceVoter extends Voter
 
     protected function canUpdate(Device $subject): void
     {
+        $owner = $subject->getOwnerUser();
+
+        if ($owner === null) {
+            throw new AccessDeniedException('Predefined devices cannot be modified');
+        }
+
+        if ($owner->getId() !== $this->user->getUserIdentifier()) {
+            throw new AccessDeniedException('You can only modify your own devices');
+        }
     }
 }

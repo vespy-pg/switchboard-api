@@ -8,6 +8,7 @@
 namespace App\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use App\ApiPlatform\Filter\DeviceOwnershipFilter;
 use App\ApiPlatform\Filter\MultiFieldSearchFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
@@ -108,6 +109,7 @@ use App\State\Device\DeviceDeleteProcessor;
     'ownerUser' => 'exact',
     'deviceType' => 'exact',
 ])]
+#[ApiFilter(DeviceOwnershipFilter::class)]
 #[ApiFilter(GroupFilter::class, arguments: ['overrideDefaultGroups' => true])]
 #[CustomAssert\EntityUniqueConstraint(
     fields: ['ownerUser', 'manufacturer', 'model'],
