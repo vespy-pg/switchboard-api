@@ -11,7 +11,7 @@ final class Version_20260211_02 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return 'Create device_type and device tables with soft-delete-aware uniqueness';
+        return 'Create device_type and device tables with code-based device type key';
     }
 
     public function up(Schema $schema): void
@@ -19,12 +19,11 @@ final class Version_20260211_02 extends AbstractMigration
         $this->addSql(<<<'SQL'
 CREATE TABLE IF NOT EXISTS app.device_type
 (
-    device_type_id      uuid                     DEFAULT gen_random_uuid() NOT NULL
+    code                varchar(100)                                     NOT NULL
         PRIMARY KEY,
     owner_user_id         uuid
         REFERENCES app.tbl_user (user_id)
             ON DELETE SET NULL,
-    code                  text,
     label                 text                     NOT NULL,
     config_schema_json    jsonb                    DEFAULT '{}'::jsonb NOT NULL,
     config_defaults_json  jsonb                    DEFAULT '{}'::jsonb NOT NULL,
@@ -37,19 +36,6 @@ SQL);
         $this->addSql(<<<'SQL'
 CREATE INDEX IF NOT EXISTS idx_device_type_owner_user_id
     ON app.device_type (owner_user_id)
-SQL);
-
-        $this->addSql(<<<'SQL'
-CREATE INDEX IF NOT EXISTS idx_device_type_code
-    ON app.device_type (code)
-SQL);
-
-        $this->addSql(<<<'SQL'
-CREATE UNIQUE INDEX IF NOT EXISTS ux_device_type_code_predefined_active
-    ON app.device_type (code)
-    WHERE owner_user_id IS NULL
-      AND removed_at IS NULL
-      AND code IS NOT NULL
 SQL);
 
         $this->addSql(<<<'SQL'
@@ -72,8 +58,8 @@ CREATE TABLE IF NOT EXISTS app.device
         REFERENCES app.tbl_user (user_id)
             ON DELETE SET NULL,
     visibility               text                     DEFAULT 'private'::text NOT NULL,
-    device_type_id           uuid                     NOT NULL
-        REFERENCES app.device_type (device_type_id),
+    device_type_code         varchar(100)             NOT NULL
+        REFERENCES app.device_type (code),
     manufacturer             text,
     model                    text,
     name_short               text                     NOT NULL,
@@ -98,8 +84,8 @@ CREATE INDEX IF NOT EXISTS idx_device_owner_user_id
 SQL);
 
         $this->addSql(<<<'SQL'
-CREATE INDEX IF NOT EXISTS idx_device_device_type_id
-    ON app.device (device_type_id)
+CREATE INDEX IF NOT EXISTS idx_device_device_type_code
+    ON app.device (device_type_code)
 SQL);
 
         $this->addSql(<<<'SQL'

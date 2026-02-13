@@ -11,6 +11,7 @@ use Doctrine\ORM\Mapping as ORM;
 use App\ApiPlatform\Filter\MultiFieldSearchFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
@@ -22,9 +23,9 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
 use DateTimeImmutable;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use App\Validator\Constraints as CustomAssert;
 use App\State\Device\DeviceCreateProcessor;
+use App\State\Device\DeviceDeleteProcessor;
 
 #[ApiResource(
     operations: [
@@ -46,6 +47,10 @@ use App\State\Device\DeviceCreateProcessor;
             denormalizationContext: ['groups' => ['update']],
             security: "is_granted('DEVICE_UPDATE', object)",
             validationContext: ['groups' => ['update']]
+        ),
+        new Delete(
+            security: "is_granted('DEVICE_UPDATE', object)",
+            processor: DeviceDeleteProcessor::class
         )
     ],
     normalizationContext: ['groups' => ['read']],
@@ -60,7 +65,7 @@ use App\State\Device\DeviceCreateProcessor;
     'nameShort' => 'partial',
     'nameFull' => 'partial',
     'poles' => 'exact',
-    'sizeMm' => 'partial',
+    'sizeMm' => 'exact',
     'defaultTerminalsJson' => 'exact',
     'configJson' => 'exact',
     'createdAt' => 'exact',
@@ -94,7 +99,7 @@ use App\State\Device\DeviceCreateProcessor;
     'nameShort' => 'partial',
     'nameFull' => 'partial',
     'poles' => 'exact',
-    'sizeMm' => 'partial',
+    'sizeMm' => 'exact',
     'defaultTerminalsJson' => 'exact',
     'configJson' => 'exact',
     'createdAt' => 'exact',
@@ -179,7 +184,7 @@ class Device
     private ?User $ownerUser = null;
 
     #[ORM\ManyToOne(targetEntity: DeviceType::class)]
-    #[ORM\JoinColumn(name: 'device_type_id', referencedColumnName: 'device_type_id', nullable: false)]
+    #[ORM\JoinColumn(name: 'device_type_code', referencedColumnName: 'code', nullable: false)]
     #[Assert\NotBlank(groups: ['device_type'])]
     #[Groups(['device_type', 'create', 'update'])]
     private ?DeviceType $type = null;
@@ -341,8 +346,8 @@ class Device
     }
 
     #[Groups(['read'])]
-    public function getTypeId(): ?string
+    public function getTypeCode(): ?string
     {
-        return $this->getType()?->getId();
+        return $this->getType()?->getCode();
     }
 }

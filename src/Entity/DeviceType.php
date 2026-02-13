@@ -22,7 +22,6 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
 use DateTimeImmutable;
 use Symfony\Component\Validator\Constraints as Assert;
-use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use App\Validator\Constraints as CustomAssert;
 
 #[ApiResource(
@@ -51,9 +50,9 @@ use App\Validator\Constraints as CustomAssert;
 #[ORM\Entity]
 #[ORM\Table(name: 'app.device_type')]
 #[ApiFilter(SearchFilter::class, properties: [
-    'id' => 'exact',
-    'code' => 'partial',
+    'code' => 'exact',
     'label' => 'partial',
+    'category' => 'exact',
     'configSchemaJson' => 'exact',
     'configDefaultsJson' => 'exact',
     'createdAt' => 'exact',
@@ -62,9 +61,9 @@ use App\Validator\Constraints as CustomAssert;
     'ownerUser' => 'exact',
 ])]
 #[ApiFilter(OrderFilter::class, properties: [
-    'id',
     'code',
     'label',
+    'category',
     'configSchemaJson',
     'configDefaultsJson',
     'createdAt',
@@ -73,9 +72,9 @@ use App\Validator\Constraints as CustomAssert;
     'ownerUser',
 ])]
 #[ApiFilter(MultiFieldSearchFilter::class, properties: [
-    'id' => 'exact',
-    'code' => 'partial',
+    'code' => 'exact',
     'label' => 'partial',
+    'category' => 'exact',
     'configSchemaJson' => 'exact',
     'configDefaultsJson' => 'exact',
     'createdAt' => 'exact',
@@ -85,11 +84,6 @@ use App\Validator\Constraints as CustomAssert;
 ])]
 #[ApiFilter(GroupFilter::class, arguments: ['overrideDefaultGroups' => true])]
 #[CustomAssert\EntityUniqueConstraint(
-    fields: ['code'],
-    conditions: ['ownerUserId' => null],
-    groups: ['create', 'update']
-)]
-#[CustomAssert\EntityUniqueConstraint(
     fields: ['ownerUser', 'label'],
     conditions: ['removedAt' => null],
     groups: ['create', 'update']
@@ -97,19 +91,20 @@ use App\Validator\Constraints as CustomAssert;
 class DeviceType
 {
     #[ORM\Id]
-    #[ORM\GeneratedValue(strategy: 'NONE')]
-    #[ORM\Column(name: 'device_type_id', type: 'uuid', nullable: false, options: ['default' => 'gen_random_uuid()'])]
-    #[Groups(['read'])]
-    private string $id;
-
-    #[ORM\Column(name: 'code', type: 'text', nullable: true)]
+    #[ORM\Column(name: 'code', type: 'string', length: 100, nullable: false)]
     #[Groups(['read', 'create', 'update'])]
-    private ?string $code = null;
+    private string $code;
 
     #[ORM\Column(name: 'label', type: 'text', nullable: false)]
     #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
     #[Groups(['read', 'create', 'update'])]
     private string $label;
+
+    #[ORM\ManyToOne(targetEntity: DeviceTypeCategory::class)]
+    #[ORM\JoinColumn(name: 'device_type_category_code', referencedColumnName: 'code', nullable: false)]
+    #[Assert\NotBlank(groups: ['create', 'update'])]
+    #[Groups(['device_type_category', 'create', 'update'])]
+    private ?DeviceTypeCategory $category = null;
 
     #[ORM\Column(name: 'config_schema_json', type: 'json', nullable: false, options: ['default' => '\'{}\'::jsonb'])]
     #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
@@ -139,22 +134,12 @@ class DeviceType
     #[Groups(['device_type_owner_user', 'create', 'update'])]
     private ?User $ownerUser = null;
 
-    public function getId(): string
-    {
-        return $this->id;
-    }
-
-    public function setId(string $id): void
-    {
-        $this->id = $id;
-    }
-
-    public function getCode(): ?string
+    public function getCode(): string
     {
         return $this->code;
     }
 
-    public function setCode(?string $code): void
+    public function setCode(string $code): void
     {
         $this->code = $code;
     }
@@ -167,6 +152,22 @@ class DeviceType
     public function setLabel(string $label): void
     {
         $this->label = $label;
+    }
+
+    public function getCategory(): ?DeviceTypeCategory
+    {
+        return $this->category;
+    }
+
+    public function setCategory(?DeviceTypeCategory $category): void
+    {
+        $this->category = $category;
+    }
+
+    #[Groups(['read'])]
+    public function getCategoryCode(): ?string
+    {
+        return $this->getCategory()?->getCode();
     }
 
     public function getConfigSchemaJson(): array

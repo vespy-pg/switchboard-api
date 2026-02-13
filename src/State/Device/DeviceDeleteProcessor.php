@@ -5,16 +5,14 @@ namespace App\State\Device;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Device;
-use App\Entity\User;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-class DeviceCreateProcessor implements ProcessorInterface
+class DeviceDeleteProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly Security $security,
     ) {
     }
 
@@ -24,18 +22,11 @@ class DeviceCreateProcessor implements ProcessorInterface
             return $data;
         }
 
-        $user = $this->security->getUser();
-        if (!$user instanceof User) {
-            throw new \RuntimeException('User must be authenticated to create a device');
+        if ($data->getRemovedAt() !== null) {
+            throw new BadRequestHttpException('Removed device cannot be deleted.');
         }
 
-        $data->setCreatedAt(new DateTimeImmutable());
-        $data->setOwnerUser($user);
-        if (!$data->getConfigJson()) {
-            $data->setConfigJson([]);
-        }
-
-        $this->entityManager->persist($data);
+        $data->setRemovedAt(new DateTimeImmutable());
         $this->entityManager->flush();
 
         return $data;
