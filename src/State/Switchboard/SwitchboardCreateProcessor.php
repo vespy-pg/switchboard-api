@@ -7,9 +7,8 @@ use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Switchboard;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-class SwitchboardUpdateProcessor implements ProcessorInterface
+class SwitchboardCreateProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
@@ -22,12 +21,13 @@ class SwitchboardUpdateProcessor implements ProcessorInterface
             return $data;
         }
 
-        if ($data->getRemovedAt() !== null) {
-            throw new BadRequestHttpException('Removed switchboard cannot be updated.');
+        if (!$data->getName()) {
+            $data->setName('New switchboard');
         }
 
-        $data->setUpdatedAt(new DateTimeImmutable());
-        $data->setVersion($data->getVersion() + 1);
+        $data->setVersion(1);
+        $data->setCreatedAt(new DateTimeImmutable());
+        $data->setContentJson([]);
 
         $this->entityManager->persist($data);
         $this->entityManager->flush();

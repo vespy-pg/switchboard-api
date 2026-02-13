@@ -24,6 +24,7 @@ use DateTimeImmutable;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 use App\Validator\Constraints as CustomAssert;
+use App\State\Device\DeviceCreateProcessor;
 
 #[ApiResource(
     operations: [
@@ -35,9 +36,10 @@ use App\Validator\Constraints as CustomAssert;
         new Post(
             normalizationContext: ['groups' => ['read']],
             denormalizationContext: ['groups' => ['create']],
-            security: "is_granted('DEVICE_CREATE', object)",
+            securityPostDenormalize: "is_granted('DEVICE_CREATE', object)",
             validationContext: ['groups' => ['create']],
-            provider: CreateProvider::class
+            provider: CreateProvider::class,
+            processor: DeviceCreateProcessor::class
         ),
         new Patch(
             normalizationContext: ['groups' => ['read']],
@@ -57,6 +59,7 @@ use App\Validator\Constraints as CustomAssert;
     'model' => 'partial',
     'nameShort' => 'partial',
     'nameFull' => 'partial',
+    'poles' => 'exact',
     'sizeMm' => 'partial',
     'defaultTerminalsJson' => 'exact',
     'configJson' => 'exact',
@@ -73,6 +76,7 @@ use App\Validator\Constraints as CustomAssert;
     'model',
     'nameShort',
     'nameFull',
+    'poles',
     'sizeMm',
     'defaultTerminalsJson',
     'configJson',
@@ -89,6 +93,7 @@ use App\Validator\Constraints as CustomAssert;
     'model' => 'partial',
     'nameShort' => 'partial',
     'nameFull' => 'partial',
+    'poles' => 'exact',
     'sizeMm' => 'partial',
     'defaultTerminalsJson' => 'exact',
     'configJson' => 'exact',
@@ -118,19 +123,16 @@ class Device
     private string $id;
 
     #[ORM\Column(name: 'visibility', type: 'text', nullable: false, options: ['default' => '\'private\'::text'])]
-    #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
     #[Groups(['read', 'create', 'update'])]
     private string $visibility;
 
-    #[ORM\Column(name: 'manufacturer', type: 'text', nullable: false)]
-    #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
+    #[ORM\Column(name: 'manufacturer', type: 'text', nullable: true)]
     #[Groups(['read', 'create', 'update'])]
-    private string $manufacturer;
+    private ?string $manufacturer = null;
 
-    #[ORM\Column(name: 'model', type: 'text', nullable: false)]
-    #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
+    #[ORM\Column(name: 'model', type: 'text', nullable: true)]
     #[Groups(['read', 'create', 'update'])]
-    private string $model;
+    private ?string $model = null;
 
     #[ORM\Column(name: 'name_short', type: 'text', nullable: false)]
     #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
@@ -142,24 +144,25 @@ class Device
     #[Groups(['read', 'create', 'update'])]
     private string $nameFull;
 
+    #[ORM\Column(name: 'poles', type: 'integer', nullable: true)]
+    #[Groups(['read', 'create', 'update'])]
+    private ?int $poles = null;
+
     #[ORM\Column(name: 'size_mm', type: 'decimal', precision: 10, scale: 2, nullable: false)]
     #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
     #[Groups(['read', 'create', 'update'])]
     private string $sizeMm;
 
     #[ORM\Column(name: 'default_terminals_json', type: 'json', nullable: false, options: ['default' => '\'[]\'::jsonb'])]
-    #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
     #[Groups(['read', 'create', 'update'])]
     private array $defaultTerminalsJson;
 
     #[ORM\Column(name: 'config_json', type: 'json', nullable: false, options: ['default' => '\'{}\'::jsonb'])]
-    #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
     #[Groups(['read', 'create', 'update'])]
     private array $configJson;
 
     #[ORM\Column(name: 'created_at', type: 'datetimetz_immutable', nullable: false, options: ['default' => 'CURRENT_TIMESTAMP'])]
-    #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
-    #[Groups(['read', 'create', 'update'])]
+    #[Groups(['read'])]
     private DateTimeImmutable $createdAt;
 
     #[ORM\Column(name: 'updated_at', type: 'datetimetz_immutable', nullable: true)]
@@ -167,17 +170,17 @@ class Device
     private ?DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(name: 'removed_at', type: 'datetimetz_immutable', nullable: true)]
-    #[Groups(['read', 'create', 'update'])]
+    #[Groups(['read'])]
     private ?DateTimeImmutable $removedAt = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
     #[ORM\JoinColumn(name: 'owner_user_id', referencedColumnName: 'user_id', nullable: true)]
-    #[Groups(['device_owner_user', 'create', 'update'])]
+    #[Groups(['device_owner_user'])]
     private ?User $ownerUser = null;
 
     #[ORM\ManyToOne(targetEntity: DeviceType::class)]
     #[ORM\JoinColumn(name: 'device_type_id', referencedColumnName: 'device_type_id', nullable: false)]
-    #[Assert\NotBlank(groups: ['device_type', 'create', 'update'])]
+    #[Assert\NotBlank(groups: ['device_type'])]
     #[Groups(['device_type', 'create', 'update'])]
     private ?DeviceType $type = null;
 
@@ -201,22 +204,22 @@ class Device
         $this->visibility = $visibility;
     }
 
-    public function getManufacturer(): string
+    public function getManufacturer(): ?string
     {
         return $this->manufacturer;
     }
 
-    public function setManufacturer(string $manufacturer): void
+    public function setManufacturer(?string $manufacturer): void
     {
         $this->manufacturer = $manufacturer;
     }
 
-    public function getModel(): string
+    public function getModel(): ?string
     {
         return $this->model;
     }
 
-    public function setModel(string $model): void
+    public function setModel(?string $model): void
     {
         $this->model = $model;
     }
@@ -239,6 +242,16 @@ class Device
     public function setNameFull(string $nameFull): void
     {
         $this->nameFull = $nameFull;
+    }
+
+    public function getPoles(): ?int
+    {
+        return $this->poles;
+    }
+
+    public function setPoles(?int $poles): void
+    {
+        $this->poles = $poles;
     }
 
     public function getSizeMm(): string

@@ -108,7 +108,7 @@ class Project
     #[Groups(['project_user'])]
     private ?User $user = null;
 
-    #[ORM\OneToMany(targetEntity: Switchboard::class, mappedBy: 'project')]
+    #[ORM\OneToMany(targetEntity: Switchboard::class, mappedBy: 'project', fetch: 'EXTRA_LAZY')]
     #[Groups(['project_switchboards'])]
     private Collection | ArrayCollection $switchboards;
 

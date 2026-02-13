@@ -151,7 +151,6 @@ services:
         tags:
             - { name: 'serializer.normalizer', priority: 200 }
 
-    App\Doctrine\RemovedAtFilterExtension:
+    App\Serializer\EntityIdToIriDenormalizer:
         tags:
-            - { name: api_platform.doctrine.orm.query_extension.collection }
-            - { name: api_platform.doctrine.orm.query_extension.item }
+            - { name: serializer.normalizer, priority: -885 }

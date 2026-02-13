@@ -74,8 +74,8 @@ CREATE TABLE IF NOT EXISTS app.device
     visibility               text                     DEFAULT 'private'::text NOT NULL,
     device_type_id           uuid                     NOT NULL
         REFERENCES app.device_type (device_type_id),
-    manufacturer             text                     NOT NULL,
-    model                    text                     NOT NULL,
+    manufacturer             text,
+    model                    text,
     name_short               text                     NOT NULL,
     name_full                text                     NOT NULL,
     size_mm                  numeric(10, 2)           NOT NULL,
@@ -88,9 +88,7 @@ CREATE TABLE IF NOT EXISTS app.device
     CONSTRAINT chk_device_visibility
         CHECK (visibility IN ('private', 'public')),
     CONSTRAINT chk_device_default_terminals_json_array
-        CHECK (jsonb_typeof(default_terminals_json) = 'array'),
-    CONSTRAINT chk_device_config_json_object
-        CHECK (jsonb_typeof(config_json) = 'object')
+        CHECK (jsonb_typeof(default_terminals_json) = 'array')
 )
 SQL);
 
@@ -112,20 +110,6 @@ SQL);
         $this->addSql(<<<'SQL'
 CREATE INDEX IF NOT EXISTS idx_device_owner_user_id_visibility
     ON app.device (owner_user_id, visibility)
-SQL);
-
-        $this->addSql(<<<'SQL'
-CREATE UNIQUE INDEX IF NOT EXISTS ux_device_owner_manufacturer_model_active
-    ON app.device (owner_user_id, manufacturer, model)
-    WHERE owner_user_id IS NOT NULL
-      AND removed_at IS NULL
-SQL);
-
-        $this->addSql(<<<'SQL'
-CREATE UNIQUE INDEX IF NOT EXISTS ux_device_predefined_manufacturer_model_active
-    ON app.device (manufacturer, model)
-    WHERE owner_user_id IS NULL
-      AND removed_at IS NULL
 SQL);
 
         $this->addSql(<<<'SQL'

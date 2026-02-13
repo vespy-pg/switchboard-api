@@ -22,6 +22,7 @@ use ApiPlatform\State\CreateProvider;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Patch;
 use App\State\Switchboard\SwitchboardDeleteProcessor;
+use App\State\Switchboard\SwitchboardCreateProcessor;
 use App\State\Switchboard\SwitchboardUpdateProcessor;
 use DateTimeImmutable;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -38,9 +39,10 @@ use App\Validator\Constraints as CustomAssert;
         new Post(
             normalizationContext: ['groups' => ['read']],
             denormalizationContext: ['groups' => ['create']],
-            security: "is_granted('SWITCHBOARD_CREATE', object)",
+            securityPostDenormalize: "is_granted('SWITCHBOARD_CREATE', object)",
             validationContext: ['groups' => ['create']],
-            provider: CreateProvider::class
+            provider: CreateProvider::class,
+            processor: SwitchboardCreateProcessor::class,
         ),
         new Patch(
             normalizationContext: ['groups' => ['read']],
@@ -103,33 +105,28 @@ class Switchboard
     private string $id;
 
     #[ORM\Column(name: 'name', type: 'string', length: 255, nullable: false)]
-    #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
     #[Assert\Length(max: 255, groups: ['read', 'create', 'update'])]
     #[Groups(['read', 'create', 'update'])]
-    private string $name;
+    private string $name = '';
 
     #[ORM\Column(name: 'content_json', type: 'json', nullable: false, options: ['default' => '\'{}\'::jsonb'])]
-    #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
     #[Groups(['read', 'create', 'update'])]
     private array $contentJson;
 
     #[ORM\Column(name: 'version', type: 'integer', nullable: false, options: ['default' => '1'])]
-    #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
-    #[Assert\Type(type: 'int', groups: ['read', 'create', 'update'])]
-    #[Groups(['read', 'create', 'update'])]
+    #[Groups(['read'])]
     private int $version;
 
     #[ORM\Column(name: 'created_at', type: 'datetimetz_immutable', nullable: false, options: ['default' => 'CURRENT_TIMESTAMP'])]
-    #[Assert\NotBlank(groups: ['read', 'create', 'update'])]
-    #[Groups(['read', 'create', 'update'])]
+    #[Groups(['read'])]
     private DateTimeImmutable $createdAt;
 
     #[ORM\Column(name: 'updated_at', type: 'datetimetz_immutable', nullable: true)]
-    #[Groups(['read', 'create', 'update'])]
+    #[Groups(['read'])]
     private ?DateTimeImmutable $updatedAt = null;
 
     #[ORM\Column(name: 'removed_at', type: 'datetimetz_immutable', nullable: true)]
-    #[Groups(['read', 'create', 'update'])]
+    #[Groups(['read'])]
     private ?DateTimeImmutable $removedAt = null;
 
     #[ORM\ManyToOne(targetEntity: Project::class)]

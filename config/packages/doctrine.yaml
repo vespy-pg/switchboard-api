@@ -42,6 +42,10 @@ doctrine:
                 alias: ApiResource
         controller_resolver:
             auto_mapping: false
+        filters:
+            removed_at_soft_delete:
+                class: App\Doctrine\Filter\RemovedAtSoftDeleteFilter
+                enabled: true
 
 when@test:
     doctrine:

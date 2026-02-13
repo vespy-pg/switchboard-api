@@ -81,13 +81,6 @@ CREATE INDEX IF NOT EXISTS idx_tbl_switchboard_removed_at
     ON app.tbl_switchboard (removed_at)
 SQL);
 
-        // Soft-delete-aware unique constraint: allow name reuse after soft delete
-        $this->addSql(<<<'SQL'
-CREATE UNIQUE INDEX IF NOT EXISTS ux_tbl_switchboard_project_id_name_active
-    ON app.tbl_switchboard (project_id, name)
-    WHERE removed_at IS NULL
-SQL);
-
         $this->addSql(<<<'SQL'
 GRANT DELETE, INSERT, REFERENCES, SELECT, TRUNCATE, UPDATE ON app.tbl_switchboard TO switchboard_user
 SQL);
