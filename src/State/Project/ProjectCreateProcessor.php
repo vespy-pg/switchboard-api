@@ -38,8 +38,7 @@ class ProjectCreateProcessor implements ProcessorInterface
 
         $switchboard = new Switchboard();
         $switchboard->setName('New switchboard');
-        $switchboard->setProject($data);
-        $switchboard->setContentJson([]);
+        $data->addSwitchboard($switchboard);
         $switchboard->setVersion(1);
         $switchboard->setCreatedAt(new DateTimeImmutable());
 

@@ -109,9 +109,18 @@ class Switchboard
     #[Groups(['read', 'create', 'update'])]
     private string $name = '';
 
-    #[ORM\Column(name: 'content_json', type: 'json', nullable: false, options: ['default' => '\'{}\'::jsonb'])]
+    #[ORM\Column(name: 'content_json', type: 'json', nullable: false, options: ['default' => '\'{"rows":[{"items":[],"label":"Row 1","rowNumber":1}],"connections":[]}\'::jsonb'])]
     #[Groups(['read', 'create', 'update'])]
-    private array $contentJson;
+    private array $contentJson = [
+        'rows' => [
+            [
+                'items' => [],
+                'label' => 'Row 1',
+                'rowNumber' => 1,
+            ],
+        ],
+        'connections' => [],
+    ];
 
     #[ORM\Column(name: 'version', type: 'integer', nullable: false, options: ['default' => '1'])]
     #[Groups(['read'])]

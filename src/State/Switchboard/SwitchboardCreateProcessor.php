@@ -27,7 +27,6 @@ class SwitchboardCreateProcessor implements ProcessorInterface
 
         $data->setVersion(1);
         $data->setCreatedAt(new DateTimeImmutable());
-        $data->setContentJson([]);
 
         $this->entityManager->persist($data);
         $this->entityManager->flush();

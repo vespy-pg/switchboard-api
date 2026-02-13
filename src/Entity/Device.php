@@ -118,7 +118,7 @@ use App\State\Device\DeviceDeleteProcessor;
 )]
 #[CustomAssert\EntityUniqueConstraint(
     fields: ['manufacturer', 'model'],
-    conditions: ['ownerUserId' => null],
+    conditions: ['ownerUser' => null],
     groups: ['create', 'update']
 )]
 class Device

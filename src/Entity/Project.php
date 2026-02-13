@@ -192,4 +192,25 @@ class Project
     {
         $this->switchboards = $switchboards;
     }
+
+    public function addSwitchboard(Switchboard $switchboard): void
+    {
+        if ($this->switchboards->contains($switchboard)) {
+            return;
+        }
+
+        $this->switchboards->add($switchboard);
+        $switchboard->setProject($this);
+    }
+
+    public function removeSwitchboard(Switchboard $switchboard): void
+    {
+        if (!$this->switchboards->removeElement($switchboard)) {
+            return;
+        }
+
+        if ($switchboard->getProject() === $this) {
+            $switchboard->setProject(null);
+        }
+    }
 }
