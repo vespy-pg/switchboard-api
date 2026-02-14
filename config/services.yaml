@@ -45,6 +45,9 @@ services:
     App\ApiPlatform\Filter\DeviceOwnershipFilter:
         tags: [ 'api_platform.filter' ]
 
+    App\ApiPlatform\Filter\RelationAliasFilter:
+        tags: [ 'api_platform.filter' ]
+
     App\DataProvider\UserDataProvider:
         arguments:
             $managerRegistry: '@doctrine'
@@ -157,3 +160,7 @@ services:
     App\Serializer\EntityIdToIriDenormalizer:
         tags:
             - { name: serializer.normalizer, priority: -885 }
+
+    App\Serializer\RelationAliasDenormalizer:
+        tags:
+            - { name: serializer.normalizer, priority: -880 }

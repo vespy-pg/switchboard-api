@@ -11,6 +11,58 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ProjectSwitchboardSoftDeleteWebTest extends AbstractWebTestCase
 {
+    public function testCreateSwitchboardAcceptsProjectIdAliasInRequestBody(): void
+    {
+        $client = $this->createAuthenticatedClient([
+            'ROLE_SWITCHBOARD_CREATE',
+            'ROLE_SWITCHBOARD_SHOW',
+        ], FixtureSetup::DEFAULT_VERIFIED_USER_ID);
+
+        $project = $this->createProjectEntity('switchboard-create-project-alias');
+
+        $client->request(
+            'POST',
+            '/api/switchboards',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/ld+json'],
+            json_encode([
+                'name' => 'switchboard-with-project-id-alias',
+                'contentJson' => ['rows' => [], 'connections' => []],
+                'projectId' => $project->getId(),
+            ])
+        );
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_CREATED);
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $this->assertIsArray($data);
+        $this->assertSame($project->getId(), $data['projectId'] ?? null);
+    }
+
+    public function testSwitchboardListAcceptsProjectIdAliasAsUrlQueryParam(): void
+    {
+        $client = $this->createAuthenticatedClient([
+            'ROLE_SWITCHBOARD_LIST',
+        ], FixtureSetup::DEFAULT_VERIFIED_USER_ID);
+
+        $projectA = $this->createProjectEntity('switchboard-project-filter-a');
+        $projectB = $this->createProjectEntity('switchboard-project-filter-b');
+
+        $switchboardA = $this->createSwitchboardEntity($projectA, 'switchboard-filter-a');
+        $switchboardB = $this->createSwitchboardEntity($projectB, 'switchboard-filter-b');
+
+        $client->request('GET', '/api/switchboards', [
+            'projectId' => $projectA->getId(),
+        ]);
+
+        $this->assertResponseIsSuccessful();
+        $data = json_decode($client->getResponse()->getContent(), true);
+        $memberIds = array_map(static fn(array $item): string => $item['id'], $data['member'] ?? []);
+
+        $this->assertContains($switchboardA->getId(), $memberIds);
+        $this->assertNotContains($switchboardB->getId(), $memberIds);
+    }
+
     public function testProjectSoftDeleteAndNoFurtherInteraction(): void
     {
         $client = $this->createAuthenticatedClient([
