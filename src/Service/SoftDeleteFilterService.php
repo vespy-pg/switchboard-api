@@ -13,6 +13,9 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 class SoftDeleteFilterService
 {
+    private const GROUP_INCLUDE_REMOVED = 'include_removed';
+    private const GROUP_INCLUDE_ARCHIVED = 'include_archived';
+
     public function __construct(
         private readonly ManagerRegistry $managerRegistry,
     ) {
@@ -50,8 +53,18 @@ class SoftDeleteFilterService
      */
     public function shouldIncludeRemoved(array $context): bool
     {
-        $groups = $context['groups'] ?? [];
-        return is_array($groups) && in_array('include_removed', $groups, true);
+        return $this->hasGroup($context, self::GROUP_INCLUDE_REMOVED);
+    }
+
+    /**
+     * Check if the 'include_archived' group is present in the context.
+     *
+     * @param array $context The context to check
+     * @return bool True if archived entities should be included
+     */
+    public function shouldIncludeArchived(array $context): bool
+    {
+        return $this->hasGroup($context, self::GROUP_INCLUDE_ARCHIVED);
     }
 
     /**
@@ -88,5 +101,31 @@ class SoftDeleteFilterService
         $classMetadata = $entityManager->getClassMetadata($resourceClass);
 
         return $classMetadata->hasField('removedAt');
+    }
+
+    /**
+     * Determine if a serialization/filter group is present in API Platform context.
+     *
+     * @param array $context Operation context
+     * @param string $group Group name to check
+     * @return bool
+     */
+    private function hasGroup(array $context, string $group): bool
+    {
+        $groups = $context['groups'] ?? [];
+        if (is_string($groups)) {
+            $groups = [$groups];
+        }
+
+        if (is_array($groups) && in_array($group, $groups, true)) {
+            return true;
+        }
+
+        $filterGroups = $context['filters']['groups'] ?? [];
+        if (is_string($filterGroups)) {
+            $filterGroups = [$filterGroups];
+        }
+
+        return is_array($filterGroups) && in_array($group, $filterGroups, true);
     }
 }

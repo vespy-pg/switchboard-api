@@ -9,13 +9,16 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Link;
 use ApiPlatform\Metadata\Patch;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\Serializer\Filter\GroupFilter;
 use ApiPlatform\State\CreateProvider;
 use App\ApiPlatform\Filter\MultiFieldSearchFilter;
+use App\State\Project\ProjectArchiveProcessor;
 use App\State\Project\ProjectCreateProcessor;
 use App\State\Project\ProjectDeleteProcessor;
+use App\State\Project\ProjectUnarchiveProcessor;
 use App\State\Project\ProjectUpdateProcessor;
 use DateTimeImmutable;
 use Doctrine\Common\Collections\ArrayCollection;
@@ -30,6 +33,30 @@ use Symfony\Component\Serializer\Attribute\Groups;
             security: "is_granted('PROJECT_LIST', object)",
         ),
         new Get(security: "is_granted('PROJECT_SHOW', object)"),
+        new Patch(
+            uriTemplate: '/projects/{id}/archive',
+            uriVariables: [
+                'id' => new Link(
+                    fromClass: self::class,
+                ),
+            ],
+            normalizationContext: ['groups' => ['read']],
+            security: "is_granted('PROJECT_UPDATE', object)",
+            deserialize: false,
+            processor: ProjectArchiveProcessor::class,
+        ),
+        new Patch(
+            uriTemplate: '/projects/{id}/unarchive',
+            uriVariables: [
+                'id' => new Link(
+                    fromClass: self::class,
+                ),
+            ],
+            normalizationContext: ['groups' => ['read']],
+            security: "is_granted('PROJECT_UPDATE', object)",
+            deserialize: false,
+            processor: ProjectUnarchiveProcessor::class,
+        ),
         new Post(
             normalizationContext: ['groups' => ['read']],
             denormalizationContext: ['groups' => ['create']],
@@ -59,6 +86,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     'name' => 'partial',
     'createdAt' => 'exact',
     'updatedAt' => 'exact',
+    'archivedAt' => 'exact',
     'removedAt' => 'exact',
     'user' => 'exact',
 ])]
@@ -67,6 +95,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     'name',
     'createdAt',
     'updatedAt',
+    'archivedAt',
     'removedAt',
     'user',
 ])]
@@ -75,6 +104,7 @@ use Symfony\Component\Serializer\Attribute\Groups;
     'name' => 'partial',
     'createdAt' => 'exact',
     'updatedAt' => 'exact',
+    'archivedAt' => 'exact',
     'removedAt' => 'exact',
     'user' => 'exact',
 ])]
@@ -98,6 +128,10 @@ class Project
     #[ORM\Column(name: 'updated_at', type: 'datetimetz_immutable', nullable: true)]
     #[Groups(['read'])]
     private ?DateTimeImmutable $updatedAt = null;
+
+    #[ORM\Column(name: 'archived_at', type: 'datetimetz_immutable', nullable: true)]
+    #[Groups(['read'])]
+    private ?DateTimeImmutable $archivedAt = null;
 
     #[ORM\Column(name: 'removed_at', type: 'datetimetz_immutable', nullable: true)]
     #[Groups(['read'])]
@@ -155,6 +189,16 @@ class Project
     public function setUpdatedAt(?DateTimeImmutable $updatedAt): void
     {
         $this->updatedAt = $updatedAt;
+    }
+
+    public function getArchivedAt(): ?DateTimeImmutable
+    {
+        return $this->archivedAt;
+    }
+
+    public function setArchivedAt(?DateTimeImmutable $archivedAt): void
+    {
+        $this->archivedAt = $archivedAt;
     }
 
     public function getRemovedAt(): ?DateTimeImmutable

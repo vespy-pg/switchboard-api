@@ -122,6 +122,109 @@ class ProjectSwitchboardSoftDeleteWebTest extends AbstractWebTestCase
         $this->assertNotContains($removedProject->getId(), $memberIds);
     }
 
+    public function testProjectCanBeUnarchivedViaDedicatedEndpoint(): void
+    {
+        $client = $this->createAuthenticatedClient([
+            'ROLE_PROJECT_SHOW',
+            'ROLE_PROJECT_UPDATE',
+        ], FixtureSetup::DEFAULT_VERIFIED_USER_ID);
+
+        $project = $this->createProjectEntity('project-archive-unarchive');
+        $projectId = $project->getId();
+
+        $client->request(
+            'PATCH',
+            sprintf('/api/projects/%s/archive', $projectId),
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/merge-patch+json']
+        );
+        $this->assertResponseIsSuccessful();
+
+        $this->getEM()->refresh($project);
+        $this->assertNotNull($project->getArchivedAt());
+
+        $client->request(
+            'PATCH',
+            sprintf('/api/projects/%s/unarchive', $projectId),
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/merge-patch+json']
+        );
+        $this->assertResponseIsSuccessful();
+
+        $this->getEM()->refresh($project);
+        $this->assertNull($project->getArchivedAt());
+    }
+
+    public function testUnarchiveRejectedWhenProjectIsNotArchived(): void
+    {
+        $client = $this->createAuthenticatedClient([
+            'ROLE_PROJECT_SHOW',
+            'ROLE_PROJECT_UPDATE',
+        ], FixtureSetup::DEFAULT_VERIFIED_USER_ID);
+
+        $project = $this->createProjectEntity('project-unarchive-not-archived');
+
+        $client->request(
+            'PATCH',
+            sprintf('/api/projects/%s/unarchive', $project->getId()),
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/merge-patch+json']
+        );
+
+        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+    }
+
+    public function testArchivedProjectBlocksSwitchboardMutations(): void
+    {
+        $client = $this->createAuthenticatedClient([
+            'ROLE_PROJECT_UPDATE',
+            'ROLE_SWITCHBOARD_CREATE',
+            'ROLE_SWITCHBOARD_UPDATE',
+        ], FixtureSetup::DEFAULT_VERIFIED_USER_ID);
+
+        $project = $this->createProjectEntity('project-archived-switchboard-lock');
+        $switchboard = $this->createSwitchboardEntity($project, 'switchboard-locked-by-archive');
+
+        $client->request(
+            'PATCH',
+            sprintf('/api/projects/%s/archive', $project->getId()),
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/merge-patch+json']
+        );
+        $this->assertResponseIsSuccessful();
+
+        $client->request(
+            'POST',
+            '/api/switchboards',
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/ld+json'],
+            json_encode([
+                'name' => 'new-switchboard-should-fail',
+                'contentJson' => ['rows' => [], 'connections' => []],
+                'projectId' => $project->getId(),
+            ])
+        );
+        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $client->request(
+            'PATCH',
+            sprintf('/api/switchboards/%s', $switchboard->getId()),
+            [],
+            [],
+            ['CONTENT_TYPE' => 'application/merge-patch+json'],
+            json_encode(['name' => 'rename-should-fail'])
+        );
+        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+
+        $client->request('DELETE', sprintf('/api/switchboards/%s', $switchboard->getId()));
+        $this->assertResponseStatusCodeSame(Response::HTTP_BAD_REQUEST);
+    }
+
     public function testSwitchboardSoftDeleteAndNoFurtherInteraction(): void
     {
         $client = $this->createAuthenticatedClient([

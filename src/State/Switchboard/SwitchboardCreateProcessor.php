@@ -5,6 +5,7 @@ namespace App\State\Switchboard;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Switchboard;
+use App\Service\ProjectArchiveGuard;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -12,6 +13,7 @@ class SwitchboardCreateProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
+        private readonly ProjectArchiveGuard $projectArchiveGuard,
     ) {
     }
 
@@ -23,6 +25,11 @@ class SwitchboardCreateProcessor implements ProcessorInterface
 
         if (!$data->getName()) {
             $data->setName('New switchboard');
+        }
+
+        $project = $data->getProject();
+        if ($project !== null) {
+            $this->projectArchiveGuard->assertProjectWritable($project);
         }
 
         $data->setVersion(1);

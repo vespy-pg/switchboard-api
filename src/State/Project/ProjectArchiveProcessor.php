@@ -1,36 +1,38 @@
 <?php
 
-namespace App\State\Switchboard;
+namespace App\State\Project;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
-use App\Entity\Switchboard;
-use App\Service\ProjectArchiveGuard;
+use App\Entity\Project;
 use DateTimeImmutable;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 
-class SwitchboardDeleteProcessor implements ProcessorInterface
+class ProjectArchiveProcessor implements ProcessorInterface
 {
     public function __construct(
         private readonly EntityManagerInterface $entityManager,
-        private readonly ProjectArchiveGuard $projectArchiveGuard,
     ) {
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
     {
-        if (!$data instanceof Switchboard) {
+        if (!$data instanceof Project) {
             return $data;
         }
 
         if ($data->getRemovedAt() !== null) {
-            throw new BadRequestHttpException('Removed switchboard cannot be deleted.');
+            throw new BadRequestHttpException('Removed project cannot be archived.');
         }
 
-        $this->projectArchiveGuard->assertSwitchboardWritable($data);
+        if ($data->getArchivedAt() !== null) {
+            throw new BadRequestHttpException('Project is already archived.');
+        }
 
-        $data->setRemovedAt(new DateTimeImmutable());
+        $data->setArchivedAt(new DateTimeImmutable());
+        $data->setUpdatedAt(new DateTimeImmutable());
+
         $this->entityManager->flush();
 
         return $data;
